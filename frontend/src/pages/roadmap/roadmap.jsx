@@ -11,22 +11,64 @@ function RoadmapPage() {
 
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [statusMap, setStatusMap] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // Загружаем прогресс из localStorage при загрузке страницы
+  // Получаем userId из localStorage (там хранится объект user)
+  const getUserId = () => {
+    try {
+      const saved = localStorage.getItem('currentUser');
+      return saved ? JSON.parse(saved).id : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Загружаем прогресс — из БД если авторизован, иначе из localStorage
   useEffect(() => {
-    if (slug) {
+    if (!slug) return;
+    setSelectedTopic(null);
+
+    const userId = getUserId();
+
+    if (userId) {
+      fetch(`/api/progress/${userId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.progress) {
+            // В roadmap.jsx статусы: 'completed', 'learning', 'not_started'
+            // В БД храним task_id = topicId, is_completed = true/false
+            // Для 'learning' используем отдельный ключ с суффиксом _learning
+            const map = {};
+            data.progress.forEach(p => {
+              if (p.task_id.endsWith('_learning')) {
+                const realId = p.task_id.replace('_learning', '');
+                if (p.is_completed) map[realId] = 'learning';
+              } else {
+                if (p.is_completed) map[p.task_id] = 'completed';
+              }
+            });
+            setStatusMap(map);
+          }
+        })
+        .catch(err => {
+          console.error('Ошибка загрузки прогресса:', err);
+          // Фолбэк на localStorage
+          const saved = localStorage.getItem(`roadmap_progress_${slug}`);
+          if (saved) {
+            try { setStatusMap(JSON.parse(saved)); } catch {}
+          }
+        })
+        .finally(() => setLoading(false));
+    } else {
+      // Не авторизован — берём из localStorage
       const saved = localStorage.getItem(`roadmap_progress_${slug}`);
       if (saved) {
-        try {
-          setStatusMap(JSON.parse(saved));
-        } catch (e) {
-          console.error('Ошибка загрузки прогресса', e);
-        }
+        try { setStatusMap(JSON.parse(saved)); } catch {}
       } else {
         setStatusMap({});
       }
+      setLoading(false);
     }
-    setSelectedTopic(null);
   }, [slug]);
 
   if (!roadmap) {
@@ -42,7 +84,6 @@ function RoadmapPage() {
     );
   }
 
-  // Сбор всех тем в плоский список для расчетов
   const allTopics = [];
   roadmap.categories.forEach(category => {
     category.items.forEach(item => {
@@ -55,24 +96,72 @@ function RoadmapPage() {
   const learningTopics = allTopics.filter(t => statusMap[t.id] === 'learning').length;
   const progressPercent = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
 
-  const updateTopicStatus = (topicId, status) => {
+  const updateTopicStatus = async (topicId, status) => {
     const updated = { ...statusMap, [topicId]: status };
     setStatusMap(updated);
-    localStorage.setItem(`roadmap_progress_${slug}`, JSON.stringify(updated));
+
+    const userId = getUserId();
+
+    if (userId) {
+      // Сохраняем в БД
+      // 'completed' → task_id = topicId, is_completed = true
+      // 'learning'  → task_id = topicId_learning, is_completed = true
+      // 'not_started' → удаляем оба
+      try {
+        if (status === 'completed') {
+          // Удаляем 'learning' запись если была
+          await fetch('/api/progress/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, monthNumber: 1, taskId: `${topicId}_learning`, isCompleted: false }),
+          });
+          // Ставим completed
+          await fetch('/api/progress/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, monthNumber: 1, taskId: topicId, isCompleted: true }),
+          });
+        } else if (status === 'learning') {
+          // Удаляем 'completed' запись если была
+          await fetch('/api/progress/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, monthNumber: 1, taskId: topicId, isCompleted: false }),
+          });
+          // Ставим learning
+          await fetch('/api/progress/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, monthNumber: 1, taskId: `${topicId}_learning`, isCompleted: true }),
+          });
+        } else {
+          // not_started — удаляем оба
+          await fetch('/api/progress/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, monthNumber: 1, taskId: topicId, isCompleted: false }),
+          });
+          await fetch('/api/progress/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, monthNumber: 1, taskId: `${topicId}_learning`, isCompleted: false }),
+          });
+        }
+      } catch (err) {
+        console.error('Ошибка сохранения статуса темы:', err);
+      }
+    } else {
+      // Не авторизован — сохраняем в localStorage
+      localStorage.setItem(`roadmap_progress_${slug}`, JSON.stringify(updated));
+    }
   };
 
   return (
     <section className="view active roadmap-page-container">
-      {/* Кнопка назад */}
-      <button 
-        className="back-button"
-        onClick={() => navigate(`/profession/${slug}`)}
-      >
-        <ArrowLeft size={20} />
-        Вернуться к описанию
+      <button className="back-button" onClick={() => navigate(`/profession/${slug}`)}>
+        <ArrowLeft size={20} /> Вернуться к описанию
       </button>
 
-      {/* Заголовок */}
       <div className="roadmap-header">
         <div className="roadmap-title-area">
           <GraduationCap size={44} className="roadmap-header-icon" />
@@ -81,8 +170,7 @@ function RoadmapPage() {
             <p className="roadmap-subtitle">{roadmap.description}</p>
           </div>
         </div>
-        
-        {/* Карточка прогресса */}
+
         <div className="roadmap-progress-card">
           <div className="progress-stats">
             <div className="stat-box">
@@ -98,57 +186,48 @@ function RoadmapPage() {
               <span className="stat-label">Всего тем</span>
             </div>
           </div>
-          
+
           <div className="progress-bar-wrapper">
             <div className="progress-bar-label">Общий прогресс: {progressPercent}%</div>
             <div className="progress-bar-container">
-              <div 
-                className="progress-bar" 
-                style={{ width: `${progressPercent}%` }}
-              ></div>
+              <div className="progress-bar" style={{ width: `${progressPercent}%` }}></div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Дерево разделов и тем */}
-      <div className="roadmap-tree">
-        {roadmap.categories.map((category, catIdx) => (
-          <div key={category.id} className="roadmap-category-section">
-            
-            {/* Соединительная линия */}
-            {catIdx > 0 && (
-              <div className="roadmap-connector-line"></div>
-            )}
-
-            <div className={`roadmap-category-card ${category.color}`}>
-              <h2 className="category-title">{category.title}</h2>
-              
-              <div className="roadmap-nodes-grid">
-                {category.items.map((item) => {
-                  const status = statusMap[item.id] || 'not_started';
-                  return (
-                    <div 
-                      key={item.id} 
-                      className={`roadmap-node-card ${status} ${selectedTopic?.id === item.id ? 'selected' : ''}`}
-                      onClick={() => setSelectedTopic({ ...item, categoryColor: category.color })}
-                    >
-                      <div className="node-status-indicator">
-                        {status === 'completed' && <CheckCircle size={18} className="icon-completed" />}
-                        {status === 'learning' && <Clock size={18} className="icon-learning" />}
-                        {status === 'not_started' && <div className="icon-empty"></div>}
+      {loading ? (
+        <p style={{ textAlign: 'center', padding: '48px' }}>Загрузка прогресса...</p>
+      ) : (
+        <div className="roadmap-tree">
+          {roadmap.categories.map((category, catIdx) => (
+            <div key={category.id} className="roadmap-category-section">
+              {catIdx > 0 && <div className="roadmap-connector-line"></div>}
+              <div className={`roadmap-category-card ${category.color}`}>
+                <h2 className="category-title">{category.title}</h2>
+                <div className="roadmap-nodes-grid">
+                  {category.items.map((item) => {
+                    const status = statusMap[item.id] || 'not_started';
+                    return (
+                      <div key={item.id}
+                        className={`roadmap-node-card ${status} ${selectedTopic?.id === item.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedTopic({ ...item, categoryColor: category.color })}>
+                        <div className="node-status-indicator">
+                          {status === 'completed' && <CheckCircle size={18} className="icon-completed" />}
+                          {status === 'learning' && <Clock size={18} className="icon-learning" />}
+                          {status === 'not_started' && <div className="icon-empty"></div>}
+                        </div>
+                        <span className="node-title">{item.title}</span>
                       </div>
-                      <span className="node-title">{item.title}</span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Выдвижная панель деталей темы */}
       <div className={`roadmap-drawer ${selectedTopic ? 'open' : ''}`}>
         {selectedTopic && (
           <div className="drawer-content">
@@ -160,27 +239,23 @@ function RoadmapPage() {
             </div>
 
             <h3 className="drawer-title">{selectedTopic.title}</h3>
-            
-            {/* Статус изучения */}
+
             <div className="status-selector-area">
               <span className="status-title">Статус изучения:</span>
               <div className="status-buttons">
-                <button 
-                  className={`status-btn btn-not-started ${statusMap[selectedTopic.id] === undefined || statusMap[selectedTopic.id] === 'not_started' ? 'active' : ''}`}
-                  onClick={() => updateTopicStatus(selectedTopic.id, 'not_started')}
-                >
+                <button
+                  className={`status-btn btn-not-started ${!statusMap[selectedTopic.id] || statusMap[selectedTopic.id] === 'not_started' ? 'active' : ''}`}
+                  onClick={() => updateTopicStatus(selectedTopic.id, 'not_started')}>
                   Не начато
                 </button>
-                <button 
+                <button
                   className={`status-btn btn-learning ${statusMap[selectedTopic.id] === 'learning' ? 'active' : ''}`}
-                  onClick={() => updateTopicStatus(selectedTopic.id, 'learning')}
-                >
+                  onClick={() => updateTopicStatus(selectedTopic.id, 'learning')}>
                   В процессе
                 </button>
-                <button 
+                <button
                   className={`status-btn btn-completed ${statusMap[selectedTopic.id] === 'completed' ? 'active' : ''}`}
-                  onClick={() => updateTopicStatus(selectedTopic.id, 'completed')}
-                >
+                  onClick={() => updateTopicStatus(selectedTopic.id, 'completed')}>
                   Изучено
                 </button>
               </div>
@@ -204,7 +279,7 @@ function RoadmapPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="no-resources-msg">Ресурсы добавятся в ближайшее время. Начните с поиска информации в Google/MDN!</p>
+                <p className="no-resources-msg">Ресурсы добавятся в ближайшее время.</p>
               )}
             </div>
           </div>

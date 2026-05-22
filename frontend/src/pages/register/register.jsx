@@ -10,8 +10,9 @@ function Register({ onRegister }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !password || !confirmPassword) {
       setError('Пожалуйста, заполните все поля!');
@@ -25,20 +26,31 @@ function Register({ onRegister }) {
       setError('Пароль должен быть не менее 6 символов!');
       return;
     }
+
     setError('');
-    
-    // Сохранение пользователя в имитированную БД
-    const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    const newUser = { name, email };
-    
-    // Предотвращение дубликатов по email
-    if (!users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-      users.push(newUser);
-      localStorage.setItem('registeredUsers', JSON.stringify(users));
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Ошибка регистрации');
+        return;
+      }
+
+      onRegister(data.user);
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Не удалось подключиться к серверу');
+    } finally {
+      setLoading(false);
     }
-    
-    onRegister(newUser);
-    navigate('/dashboard');
   };
 
   return (
@@ -52,84 +64,54 @@ function Register({ onRegister }) {
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label className="form-label" htmlFor="name-input">
-                Имя и фамилия
-              </label>
+              <label className="form-label" htmlFor="name-input">Имя и фамилия</label>
               <div className="form-input-wrapper">
-                <input
-                  type="text"
-                  id="name-input"
-                  className="form-input"
-                  placeholder="Иван Иванов"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+                <input type="text" id="name-input" className="form-input"
+                  placeholder="Иван Иванов" value={name}
+                  onChange={(e) => setName(e.target.value)} />
                 <User className="form-icon" size={20} />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="email-input">
-                Электронная почта
-              </label>
+              <label className="form-label" htmlFor="email-input">Электронная почта</label>
               <div className="form-input-wrapper">
-                <input
-                  type="email"
-                  id="email-input"
-                  className="form-input"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                <input type="email" id="email-input" className="form-input"
+                  placeholder="name@example.com" value={email}
+                  onChange={(e) => setEmail(e.target.value)} />
                 <Mail className="form-icon" size={20} />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="password-input">
-                Пароль
-              </label>
+              <label className="form-label" htmlFor="password-input">Пароль</label>
               <div className="form-input-wrapper">
-                <input
-                  type="password"
-                  id="password-input"
-                  className="form-input"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <input type="password" id="password-input" className="form-input"
+                  placeholder="••••••••" value={password}
+                  onChange={(e) => setPassword(e.target.value)} />
                 <Lock className="form-icon" size={20} />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="confirm-password-input">
-                Подтверждение пароля
-              </label>
+              <label className="form-label" htmlFor="confirm-password-input">Подтверждение пароля</label>
               <div className="form-input-wrapper">
-                <input
-                  type="password"
-                  id="confirm-password-input"
-                  className="form-input"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+                <input type="password" id="confirm-password-input" className="form-input"
+                  placeholder="••••••••" value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)} />
                 <Lock className="form-icon" size={20} />
               </div>
             </div>
 
-            <button type="submit" className="auth-btn-submit">
-              Зарегистрироваться
-              <UserPlus size={20} />
+            <button type="submit" className="auth-btn-submit" disabled={loading}>
+              {loading ? 'Регистрация...' : 'Зарегистрироваться'}
+              {!loading && <UserPlus size={20} />}
             </button>
           </form>
 
           <div className="auth-footer">
             Уже есть аккаунт?
-            <Link to="/login" className="auth-link">
-              Войти
-            </Link>
+            <Link to="/login" className="auth-link">Войти</Link>
           </div>
         </div>
       </div>
