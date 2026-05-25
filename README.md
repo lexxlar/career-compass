@@ -55,7 +55,7 @@ career-compass/
 ## Работа с проектом
 
 # 1. Клонируем репозиторий
-git clone <ссылка-на-репозиторий>
+git clone https://github.com/lekslar/career-compass
 cd career-compass
 
 # 2. Устанавливаем зависимости
@@ -69,10 +69,7 @@ cd ..
 # 4. Настраиваем .env (backend)
 cd backend
 cp .env.example .env   # если есть пример
-# Открой .env и заполни:
-# SUPABASE_URL=...
-# SUPABASE_ANON_KEY=...
-# SUPABASE_SERVICE_KEY=...
+Получаем .env с необходимыми ключами
 
 ## Ключевые моменты проекта
 
