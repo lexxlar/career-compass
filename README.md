@@ -80,5 +80,5 @@ cp .env.example .env   # если есть пример
 База данных: Supabase (PostgreSQL) <br>
 Frontend: React + Vite + React Router v6 <br>
 Backend: Express.js <br>
-Стили: Чистый CSS (без Tailwind) <br>
+Стили: Tailwind CSS <br>
 Авторизация: Supabase Auth <br>
