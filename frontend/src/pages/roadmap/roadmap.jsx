@@ -24,53 +24,44 @@ function RoadmapPage() {
   };
 
   // Загрузка прогресса с адаптацией под JSONB
+  // Загрузка прогресса Roadmap
   useEffect(() => {
-    if (!slug) return;
-    setSelectedTopic(null);
+      if (!slug) return;
+      setSelectedTopic(null);
 
-    const userId = getUserId();
+      const userId = getUserId();
 
-    if (userId) {
-      fetch(`/api/progress/${userId}`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.status === 'success' && data.progress) {
-            const map = {};
-
-            // Формат tasks: { "topicId": "completed" | "learning" }
-            // Ключ not_started не хранится (удаляется на бэкенде)
-            data.progress.forEach(row => {
-              if (row.tasks) {
-                Object.entries(row.tasks).forEach(([taskId, statusValue]) => {
-                  if (statusValue === 'completed' || statusValue === 'learning') {
-                    map[taskId] = statusValue;
+      if (userId) {
+          fetch(`/api/progress/${userId}/roadmap`)   // ← Вот главное изменение
+              .then(r => r.json())
+              .then(data => {
+                  if (data.status === 'success' && data.progress) {
+                      setStatusMap(data.progress);   // Теперь приходит чистый объект
+                  } else {
+                      setStatusMap({});
                   }
-                });
-              }
-            });
-
-            setStatusMap(map);
-          }
-        })
-        .catch(err => {
-          console.error('Ошибка загрузки прогресса:', err);
-          // Фолбэк на localStorage
+              })
+              .catch(err => {
+                  console.error('Ошибка загрузки прогресса roadmap:', err);
+                  // Fallback на localStorage
+                  const saved = localStorage.getItem(`roadmap_progress_${slug}`);
+                  if (saved) {
+                      try { setStatusMap(JSON.parse(saved)); } catch {}
+                  } else {
+                      setStatusMap({});
+                  }
+              })
+              .finally(() => setLoading(false));
+      } else {
+          // Не авторизован
           const saved = localStorage.getItem(`roadmap_progress_${slug}`);
           if (saved) {
-            try { setStatusMap(JSON.parse(saved)); } catch {}
+              try { setStatusMap(JSON.parse(saved)); } catch {}
+          } else {
+              setStatusMap({});
           }
-        })
-        .finally(() => setLoading(false));
-    } else {
-      // Не авторизован — берём из localStorage
-      const saved = localStorage.getItem(`roadmap_progress_${slug}`);
-      if (saved) {
-        try { setStatusMap(JSON.parse(saved)); } catch {}
-      } else {
-        setStatusMap({});
+          setLoading(false);
       }
-      setLoading(false);
-    }
   }, [slug]);
 
   if (!roadmap) {
@@ -106,28 +97,24 @@ function RoadmapPage() {
     const userId = getUserId();
 
     if (userId) {
-      // month_number = 0 зарезервировано для roadmap-прогресса
-      // Передаём status строкой: 'completed' | 'learning' | 'not_started'
-      // Бэкенд сам хранит строку, not_started — удаляет ключ
-      try {
-        await fetch('/api/progress/toggle', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            monthNumber: 0,
-            taskId: topicId,
-            status,
-          }),
-        });
-      } catch (err) {
-        console.error('Ошибка сохранения статуса темы:', err);
-      }
+        try {
+            await fetch('/api/progress/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    monthNumber: 0,        // 0 = roadmap
+                    taskId: topicId,
+                    status,                // 'completed' | 'learning' | 'not_started'
+                }),
+            });
+        } catch (err) {
+            console.error('Ошибка сохранения статуса:', err);
+        }
     } else {
-      // Не авторизован — сохраняем в localStorage
-      localStorage.setItem(`roadmap_progress_${slug}`, JSON.stringify(updated));
+        localStorage.setItem(`roadmap_progress_${slug}`, JSON.stringify(updated));
     }
-  };
+};
 
   return (
     <section className="view active roadmap-page-container">

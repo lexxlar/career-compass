@@ -365,7 +365,9 @@ function QuizPage({ user, onUserUpdate }) {
     const matchPercentage = result.matchPercentage;
     const IconComponent = topProfession?.icon || Code;
 
+        // === РАСЧЁТ ПРОЦЕНТОВ ДЛЯ СПИСКА ===
     const calculatedScores = { frontend: 0, backend: 0, qa: 0, android: 0 };
+    
     answers.forEach(ans => {
       if (ans.optionId === 'a') calculatedScores.frontend += 5;
       if (ans.optionId === 'b') calculatedScores.backend += 5;
@@ -380,12 +382,18 @@ function QuizPage({ user, onUserUpdate }) {
     });
 
     const maxScore = 50;
-    const breakdown = [
+
+    const allBreakdown = [
       { slug: 'frontend', title: 'Frontend Developer', pct: Math.round((calculatedScores.frontend / maxScore) * 100), color: '#3b82f6' },
-      { slug: 'backend', title: 'Backend Developer', pct: Math.round((calculatedScores.backend / maxScore) * 100), color: '#8b5cf6' },
-      { slug: 'android', title: 'Android Developer', pct: Math.round((calculatedScores.android / maxScore) * 100), color: '#ec4899' },
-      { slug: 'qa', title: 'QA Engineer', pct: Math.round((calculatedScores.qa / maxScore) * 100), color: '#10b981' }
-    ].sort((a, b) => b.pct - a.pct);
+      { slug: 'backend', title: 'Backend Developer',  pct: Math.round((calculatedScores.backend / maxScore) * 100),  color: '#8b5cf6' },
+      { slug: 'android', title: 'Android Developer',  pct: Math.round((calculatedScores.android / maxScore) * 100),  color: '#ec4899' },
+      { slug: 'qa',      title: 'QA Engineer',        pct: Math.round((calculatedScores.qa / maxScore) * 100),      color: '#10b981' }
+    ];
+
+    // Убираем рекомендуемую профессию из списка, чтобы не дублировалась
+    const breakdown = allBreakdown
+      .filter(item => item.slug !== recommendedSlug)
+      .sort((a, b) => b.pct - a.pct);
 
     return (
       <section className="quiz-wrapper view active" style={{ maxWidth: '1000px' }}>

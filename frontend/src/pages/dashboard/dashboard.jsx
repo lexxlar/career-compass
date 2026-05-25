@@ -384,7 +384,7 @@ function Dashboard({ user, onLogout }) {
     }
 
     setProgressLoading(true);
-    fetch(`/api/progress/${user.id}`)
+    fetch(`/api/progress/${user.id}/dashboard`)
       .then(r => r.json())
       .then(data => {
         if (data.progress) {

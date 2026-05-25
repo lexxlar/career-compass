@@ -352,3 +352,33 @@
     background: #fef2f2;
     border-color: rgba(239, 68, 68, 0.1);
 }
+
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .dashboard-sidebar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 12px;
+        height: auto;
+    }
+    
+    .dashboard-tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px 8px;
+        font-size: 0.9rem;
+    }
+    
+    .dashboard-panel {
+        padding: 20px 16px;
+    }
+    
+    .roadmap-month-header {
+        padding: 14px 16px;
+    }
+}

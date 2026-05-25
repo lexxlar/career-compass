@@ -3,60 +3,85 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 
-// GET /api/progress/:userId
-router.get('/:userId', async (req, res) => {
+// ======================
+// GET прогресса
+// ======================
+
+// Получить только Roadmap (month_number = 0)
+router.get('/:userId/roadmap', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const { data, error } = await supabase
+            .from('user_tasks_progress')
+            .select('tasks')
+            .eq('user_id', userId)
+            .eq('month_number', 0)
+            .maybeSingle();
+
+        if (error) return res.status(500).json({ error: error.message });
+
+        res.json({ 
+            status: 'success', 
+            progress: data?.tasks || {} 
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Получить только Dashboard (месяцы 1-12)
+router.get('/:userId/dashboard', async (req, res) => {
     try {
         const { userId } = req.params;
 
         const { data, error } = await supabase
             .from('user_tasks_progress')
             .select('month_number, tasks')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .gte('month_number', 1)
+            .lte('month_number', 12);
 
         if (error) return res.status(500).json({ error: error.message });
 
-        res.json({ status: 'success', progress: data || [] });
+        res.json({ 
+            status: 'success', 
+            progress: data || [] 
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Ошибка сервера при получении прогресса' });
+        res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 
-// POST /api/progress/toggle
-// Поддерживает два режима:
-//   1. Чекбоксы dashboard: { userId, monthNumber, taskId, isCompleted: true/false }
-//   2. Статусы roadmap:    { userId, monthNumber, taskId, status: 'completed'|'learning'|'not_started' }
+// ======================
+// POST toggle (обновление статуса)
+// ======================
 router.post('/toggle', async (req, res) => {
     try {
         const { userId, monthNumber, taskId, isCompleted, status } = req.body;
 
-        if (!userId || monthNumber === undefined || monthNumber === null || !taskId) {
-            return res.status(400).json({ error: 'Переданы не все обязательные поля' });
+        if (!userId || monthNumber === undefined || !taskId) {
+            return res.status(400).json({ error: 'Не все обязательные поля' });
         }
 
-        // Определяем значение для сохранения:
-        // - если передан status ('completed'|'learning'|'not_started') — сохраняем строку
-        // - если передан isCompleted (boolean) — сохраняем boolean (для чекбоксов dashboard)
         let valueToStore;
         if (status !== undefined) {
-            valueToStore = status; // 'completed', 'learning', 'not_started'
+            valueToStore = status;           // для roadmap: 'completed' | 'learning'
         } else {
-            valueToStore = isCompleted; // true / false
+            valueToStore = isCompleted;      // для dashboard: boolean
         }
 
-        // Читаем текущий tasks
-        const { data: existing, error: fetchError } = await supabase
+        const { data: existing } = await supabase
             .from('user_tasks_progress')
             .select('tasks')
             .eq('user_id', userId)
             .eq('month_number', monthNumber)
             .maybeSingle();
 
-        if (fetchError) return res.status(500).json({ error: fetchError.message });
-
         const currentTasks = existing?.tasks || {};
 
-        // Если статус 'not_started' — удаляем ключ из объекта (не хранить мусор)
         if (valueToStore === 'not_started' || valueToStore === false) {
             delete currentTasks[taskId];
         } else {
@@ -65,30 +90,25 @@ router.post('/toggle', async (req, res) => {
 
         const { error: upsertError } = await supabase
             .from('user_tasks_progress')
-            .upsert(
-                {
-                    user_id: userId,
-                    month_number: monthNumber,
-                    tasks: currentTasks,
-                    updated_at: new Date().toISOString(),
-                },
-                { onConflict: 'user_id,month_number' }
-            );
+            .upsert({
+                user_id: userId,
+                month_number: monthNumber,
+                tasks: currentTasks,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id,month_number' });
 
         if (upsertError) return res.status(500).json({ error: upsertError.message });
 
         res.json({ status: 'success' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Ошибка сервера при обновлении прогресса' });
+        res.status(500).json({ error: 'Ошибка при обновлении прогресса' });
     }
 });
 
-module.exports = router;
-
-// DELETE /api/progress/reset/:userId
-// Сбрасывает прогресс dashboard (месяца 1-12) при смене профессии.
-// Roadmap-прогресс (month_number = 0) не трогает.
+// ======================
+// Сброс dashboard при смене профессии
+// ======================
 router.delete('/reset/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -97,14 +117,16 @@ router.delete('/reset/:userId', async (req, res) => {
             .from('user_tasks_progress')
             .delete()
             .eq('user_id', userId)
-            .gte('month_number', 1)  // только месяцы 1-12
+            .gte('month_number', 1)
             .lte('month_number', 12);
 
         if (error) return res.status(500).json({ error: error.message });
 
-        res.json({ status: 'success', message: 'Прогресс dashboard сброшен' });
+        res.json({ status: 'success', message: 'Dashboard прогресс сброшен' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Ошибка сервера при сбросе прогресса' });
+        res.status(500).json({ error: 'Ошибка сброса' });
     }
 });
+
+module.exports = router;

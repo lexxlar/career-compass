@@ -837,3 +837,26 @@ main {
     }
 }
 
+
+/* Мобильный first подход */
+@media (max-width: 640px) {
+    .container {
+        padding: 0 16px;
+    }
+    
+    h1 {
+        font-size: 2rem !important;
+    }
+    
+    .section-title {
+        font-size: 1.75rem !important;
+    }
+}
+
+/* Для drawer на всех страницах */
+@media (max-width: 768px) {
+    .modal, .drawer {
+        width: 100% !important;
+        border-radius: 16px 16px 0 0 !important;
+    }
+}

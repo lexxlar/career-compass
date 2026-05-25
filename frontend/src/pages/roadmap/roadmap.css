@@ -534,3 +534,28 @@
   }
 }
 
+@media (max-width: 768px) {
+    .roadmap-nodes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+    }
+    
+    .roadmap-drawer {
+        width: 100% !important;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        top: auto;
+        bottom: 0;
+        height: 70vh;
+        transform: translateY(100%);
+    }
+    
+    .roadmap-drawer.open {
+        transform: translateY(0);
+    }
+    
+    .roadmap-header {
+        grid-template-columns: 1fr;
+    }
+}
+
