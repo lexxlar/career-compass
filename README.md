@@ -55,20 +55,24 @@ career-compass/
 ## Работа с проектом
 
 ### 1. Клонируем репозиторий
+```
 git clone https://github.com/lekslar/career-compass
 cd career-compass
-
+```
 ### 2. Устанавливаем зависимости
-npm install
+`npm install`
 
 ### 3. Переходим в backend и устанавливаем его зависимости
+```
 cd backend
 npm install
 cd ..
-
+```
 ### 4. Настраиваем .env (backend)
+```
 cd backend
 cp .env.example .env   # если есть пример
+```
 Получаем .env с необходимыми ключами
 
 ## Ключевые моменты проекта
