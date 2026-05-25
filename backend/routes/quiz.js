@@ -34,10 +34,10 @@ router.post('/submit', async (req, res) => {
         const topProfessions = calculateResults(answers);
         const topProfession = topProfessions[0]; // лучшая профессия
 
-        // Считаем процент: сколько ответов совпало с топ-профессией
+        // Считаем процент: сколько ответов совпало с топ-профессией (включая нейтральный 'e')
         const professionAnswerMap = { frontend: 'a', backend: 'b', qa: 'c', android: 'd' };
         const targetOption = professionAnswerMap[topProfession];
-        const matchCount = answers.filter(a => a.optionId === targetOption).length;
+        const matchCount = answers.filter(a => a.optionId === targetOption || a.optionId === 'e').length;
         const matchPercentage = Math.round((matchCount / answers.length) * 100);
 
         // Сохраняем результат в БД (только если пользователь авторизован)
@@ -91,6 +91,39 @@ router.get('/results/:userId', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Ошибка получения истории тестов' });
+    }
+});
+
+// POST /api/quiz/sync — синхронизация анонимных результатов тестов при авторизации
+router.post('/sync', async (req, res) => {
+    try {
+        const { userId, localHistory } = req.body;
+
+        if (!userId || !Array.isArray(localHistory) || localHistory.length === 0) {
+            return res.json({ status: 'success', message: 'Нечего синхронизировать' });
+        }
+
+        const records = localHistory.map(item => ({
+            user_id: userId,
+            test_name: item.test_name || 'Общий тест на IT-профессию',
+            match_profession: item.match_profession,
+            match_percentage: item.match_percentage,
+            completed_at: item.completed_at || new Date().toISOString()
+        }));
+
+        const { error } = await supabase
+            .from('quiz_results')
+            .insert(records);
+
+        if (error) {
+            console.error('Ошибка синхронизации результатов:', error.message);
+            return res.status(500).json({ error: error.message });
+        }
+
+        res.json({ status: 'success', count: records.length });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Ошибка сервера при синхронизации' });
     }
 });
 

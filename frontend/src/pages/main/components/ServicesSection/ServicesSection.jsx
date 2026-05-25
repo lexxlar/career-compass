@@ -21,6 +21,11 @@ function ServicesSection() {
           <p>Пошаговые планы обучения от нуля до первой работы.</p>
           <button className="circle-btn"><ChevronRight /></button>
         </div>
+        <div className="service-card card-lime" onClick={() => navigate('/quiz')} style={{ cursor: 'pointer' }}>
+          <h4>Тестирование</h4>
+          <p>Пройди интерактивный тест и определи свои сильные стороны.</p>
+          <button className="circle-btn"><ChevronRight /></button>
+        </div>
       </div>
     </div>
   );

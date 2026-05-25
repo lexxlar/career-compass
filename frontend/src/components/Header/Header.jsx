@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import './Header.css';
 
 function Header({ user }) {
@@ -19,8 +19,9 @@ function Header({ user }) {
           </div>
         </div>
         <nav className="nav-links">
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/professions'); }}>Профессии</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/chat'); }}>ИИ-Ассистент</a>
+          <NavLink to="/professions" className={({ isActive }) => isActive ? 'active' : ''}>Профессии</NavLink>
+          <NavLink to="/quiz" className={({ isActive }) => isActive ? 'active' : ''}>Тестирование</NavLink>
+          <NavLink to="/chat" className={({ isActive }) => isActive ? 'active' : ''}>ИИ-Ассистент</NavLink>
         </nav>
         <div className="auth-btn">
           {user ? (

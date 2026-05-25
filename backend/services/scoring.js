@@ -13,6 +13,12 @@ function calculateResults(userAnswers) {
         if (answer.optionId === 'b') scores.backend += 5;
         if (answer.optionId === 'c') scores.qa += 5;
         if (answer.optionId === 'd') scores.android += 5;
+        if (answer.optionId === 'e') {
+            scores.frontend += 2;
+            scores.backend += 2;
+            scores.qa += 2;
+            scores.android += 2;
+        }
     });
 
     const sortedProfessions = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
