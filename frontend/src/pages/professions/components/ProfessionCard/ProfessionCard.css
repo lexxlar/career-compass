@@ -78,3 +78,15 @@
     }
 }
 
+
+@media (max-width: 480px) {
+    .profession-card {
+        padding: 20px 16px;
+    }
+    .profession-card-title {
+        font-size: 1.2rem;
+    }
+    .profession-card-desc {
+        font-size: 0.9rem;
+    }
+}

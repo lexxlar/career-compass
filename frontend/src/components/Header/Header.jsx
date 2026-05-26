@@ -1,12 +1,15 @@
 
 import { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { X } from 'lucide-react'; // крестик для закрытия
+import { X } from 'lucide-react';
 import './Header.css';
 
 function Header({ user }) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Анонимный пользователь — прошёл тест, но не зарегистрировался
+  const hasAnonymousResult = !user && !!localStorage.getItem('anonymous_profession');
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -35,6 +38,10 @@ function Header({ user }) {
           {user ? (
             <button className="btn-outline" onClick={() => navigate('/dashboard')}>
               {user.name}
+            </button>
+          ) : hasAnonymousResult ? (
+            <button className="btn-outline" onClick={() => navigate('/dashboard')}>
+              Мой результат
             </button>
           ) : (
             <button className="btn-outline" onClick={() => navigate('/login')}>
@@ -66,12 +73,17 @@ function Header({ user }) {
           
           <div className="mobile-auth">
             {user ? (
-              <button className="btn-outline" 
+              <button className="btn-outline"
                       onClick={() => { navigate('/dashboard'); closeMenu(); }}>
                 Личный кабинет
               </button>
+            ) : hasAnonymousResult ? (
+              <button className="btn-outline"
+                      onClick={() => { navigate('/dashboard'); closeMenu(); }}>
+                Мой результат
+              </button>
             ) : (
-              <button className="btn-outline" 
+              <button className="btn-outline"
                       onClick={() => { navigate('/login'); closeMenu(); }}>
                 Войти
               </button>

@@ -382,3 +382,125 @@
         padding: 14px 16px;
     }
 }
+@media (max-width: 480px) {
+    .dashboard-grid {
+        gap: 12px;
+    }
+    .dashboard-sidebar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 8px;
+        gap: 4px;
+    }
+    .dashboard-tab-btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        padding: 10px 4px;
+        font-size: 0.78rem;
+        gap: 4px;
+    }
+    .dashboard-tab-btn svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+    }
+    .dashboard-panel {
+        padding: 20px 16px;
+    }
+    .panel-title {
+        font-size: 1.4rem;
+    }
+    .panel-subtitle {
+        font-size: 0.9rem;
+    }
+    .profile-summary-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+        gap: 12px;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .stat-card {
+        padding: 16px;
+    }
+    .stat-value {
+        font-size: 1.8rem;
+    }
+    .roadmap-month-header {
+        padding: 14px 12px;
+        font-size: 0.9rem;
+    }
+    .roadmap-checklist-item {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+    .cta-section {
+        padding: 28px 20px;
+    }
+    .cta-section h2 {
+        font-size: 1.3rem;
+    }
+    .history-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 16px;
+    }
+}
+
+/* Guest banner */
+.guest-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: var(--lilac-light);
+    border: 1.5px solid var(--purple-light);
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    margin-bottom: 28px;
+}
+
+.guest-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.guest-banner-text strong {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.guest-banner-text span {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.guest-banner-btns {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .guest-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+    }
+    .guest-banner-btns {
+        width: 100%;
+    }
+    .guest-banner-btns button {
+        flex: 1;
+        justify-content: center;
+    }
+}

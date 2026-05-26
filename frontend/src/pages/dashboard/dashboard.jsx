@@ -560,13 +560,35 @@ function Dashboard({ user, onLogout }) {
             onClick={() => setActiveTab('tests')}>
             <History size={20} /> История тестов
           </button>
-          <button className="dashboard-tab-btn logout-btn"
-            onClick={() => { onLogout(); navigate('/'); }}>
-            <LogOut size={20} /> Выйти
-          </button>
+          {user && (
+            <button className="dashboard-tab-btn logout-btn"
+              onClick={() => { onLogout(); navigate('/'); }}>
+              <LogOut size={20} /> Выйти
+            </button>
+          )}
         </aside>
 
         <main className="dashboard-panel">
+
+          {/* Баннер для незалогиненного пользователя */}
+          {!user && (
+            <div className="guest-banner">
+              <div className="guest-banner-text">
+                <strong>Вы просматриваете результаты без аккаунта</strong>
+                <span>Зарегистрируйтесь, чтобы сохранить прогресс, отмечать выполненные задачи и получить доступ ко всем функциям платформы</span>
+              </div>
+              <div className="guest-banner-btns">
+                <button className="btn-primary" style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+                  onClick={() => navigate('/register')}>
+                  Зарегистрироваться
+                </button>
+                <button className="btn-outline" style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+                  onClick={() => navigate('/login')}>
+                  Войти
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ПРОГРЕСС */}
           {activeTab === 'progress' && (

@@ -160,3 +160,36 @@
     25% { transform: translateX(-6px); }
     75% { transform: translateX(6px); }
 }
+
+
+/* ========== МОБИЛЬНЫЙ АДАПТИВ ========== */
+@media (max-width: 600px) {
+    .auth-wrapper {
+        padding: 20px 0;
+        align-items: flex-start;
+    }
+    .auth-card {
+        padding: 28px 20px;
+        border-radius: var(--radius-md);
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+        width: 100%;
+        box-shadow: none;
+        border-top: none;
+    }
+    .auth-title {
+        font-size: 1.5rem;
+    }
+    .auth-subtitle {
+        font-size: 0.95rem;
+    }
+    .form-input {
+        padding: 12px 16px 12px 44px;
+        font-size: 0.95rem;
+    }
+    .auth-btn-submit {
+        padding: 14px;
+        font-size: 1rem;
+    }
+}
